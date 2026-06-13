@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import AuthNavigator from './AuthNavigator';
-import TabNavigator from './TabNavigator';
+import OnboardingNavigator from './OnboardingNavigator';
 import { useAuth } from '../store/useAuth';
 import { supabase } from '../services/supabase';
 
@@ -22,7 +22,8 @@ export default function AppNavigator() {
 
   return (
     <NavigationContainer>
-      {session ? <TabNavigator /> : <AuthNavigator />}
+      {/* Temporarily forcing OnboardingNavigator to show the Flow for preview */}
+      <OnboardingNavigator />
     </NavigationContainer>
   );
 }
