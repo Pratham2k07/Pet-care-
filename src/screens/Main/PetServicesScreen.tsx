@@ -40,8 +40,26 @@ export default function PetServicesScreen({ route, navigation }: any) {
           <Text style={styles.petBreed}>{pet.breed}</Text>
         </View>
 
+        {/* Daily Log System */}
+        <Text style={styles.sectionTitle}>Daily Tracking</Text>
+        <TouchableOpacity 
+          style={styles.aiPredictionCard}
+          onPress={() => navigation.navigate('DailyLog', { pet })}
+        >
+          <View style={[styles.serviceIconBg, { backgroundColor: '#EFF6FF' }]}>
+            <Ionicons name="clipboard" size={32} color="#3B82F6" />
+          </View>
+          <View style={styles.serviceInfo}>
+            <Text style={styles.serviceTitle}>Log Daily Health</Text>
+            <Text style={styles.serviceDesc}>Track eating habits and symptoms to feed the AI.</Text>
+          </View>
+          <View style={styles.serviceArrow}>
+            <Ionicons name="add-circle" size={20} color="#3B82F6" />
+          </View>
+        </TouchableOpacity>
+
         {/* Services Grid */}
-        <Text style={styles.sectionTitle}>Book a Service</Text>
+        <Text style={styles.sectionTitle}>Book Appointments</Text>
         <View style={styles.servicesGrid}>
           
           <TouchableOpacity style={styles.serviceCard}>
@@ -77,6 +95,22 @@ export default function PetServicesScreen({ route, navigation }: any) {
           </TouchableOpacity>
 
         </View>
+
+        {/* AI Health Prediction */}
+        <Text style={styles.sectionTitle}>AI Health Insights</Text>
+        <TouchableOpacity 
+          style={styles.aiPredictionCard}
+          onPress={() => navigation.navigate('HealthHistory', { pet })}
+        >
+          <View style={[styles.serviceIconBg, { backgroundColor: '#F0FDF4' }]}>
+            <Ionicons name="sparkles" size={32} color="#10B981" />
+          </View>
+          <View style={{ flex: 1, marginLeft: 16 }}>
+            <Text style={styles.serviceTitle}>Predict Health Risks</Text>
+            <Text style={styles.serviceSub}>Upload vet reports for AI analysis</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={24} color="#CBD5E1" />
+        </TouchableOpacity>
 
         {/* Recent Activity */}
         <Text style={styles.sectionTitle}>Recent Activity</Text>
@@ -200,6 +234,20 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
+  aiPredictionCard: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 20,
+    alignItems: 'center',
+    marginHorizontal: 24,
+    marginBottom: 32,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 3,
+  },
   serviceIconBg: {
     width: 64,
     height: 64,
@@ -218,6 +266,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#64748B',
     fontWeight: '500',
+  },
+  serviceInfo: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  serviceDesc: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  serviceArrow: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   activityList: {
     paddingHorizontal: 24,

@@ -27,6 +27,7 @@ export default function SignupScreen({ navigation }: any) {
     if (error) Alert.alert('Error', error.message);
     else if (data.session) {
       Alert.alert('Success', 'Account created successfully!');
+      // AppNavigator will detect session and redirect
     } else {
       Alert.alert('Check your inbox', 'We sent you a confirmation link.');
     }

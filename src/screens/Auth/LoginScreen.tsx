@@ -14,6 +14,11 @@ import {
 } from 'react-native';
 import { supabase } from '../../services/supabase';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
+import * as AuthSession from 'expo-auth-session';
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
@@ -24,12 +29,70 @@ export default function LoginScreen({ navigation }: any) {
   async function signInWithEmail() {
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password,
+      email,
+      password,
     });
 
-    if (error) Alert.alert('Error', error.message);
+    if (error) {
+      Alert.alert('Login Failed', error.message);
+    }
     setLoading(false);
+  }
+
+  async function signInWithGoogle() {
+    try {
+      setLoading(true);
+
+      if (Platform.OS === 'web') {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: window.location.origin,
+          }
+        });
+        if (error) throw error;
+        if (data?.url) {
+          window.location.href = data.url;
+        }
+        return;
+      }
+      
+      const redirectUrl = AuthSession.makeRedirectUri();
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+        if (result.type === 'success' && result.url) {
+          const paramsStr = result.url.split('#')[1] || result.url.split('?')[1];
+          if (paramsStr) {
+            const params = paramsStr.split('&').reduce((acc, current) => {
+              const [key, value] = current.split('=');
+              acc[key] = value;
+              return acc;
+            }, {} as Record<string, string>);
+            
+            if (params.access_token && params.refresh_token) {
+              await supabase.auth.setSession({
+                access_token: params.access_token,
+                refresh_token: params.refresh_token
+              });
+            }
+          }
+        }
+      }
+    } catch (error: any) {
+      Alert.alert('Google Sign-In Error', error.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -147,7 +210,7 @@ export default function LoginScreen({ navigation }: any) {
             </View>
             
             <View style={styles.socialButtonsContainer}>
-              <TouchableOpacity style={styles.socialButton}>
+              <TouchableOpacity style={styles.socialButton} onPress={signInWithGoogle} disabled={loading}>
                 <Image source={{uri: 'https://cdn-icons-png.flaticon.com/512/2991/2991148.png'}} style={styles.socialIcon} />
               </TouchableOpacity>
               <TouchableOpacity style={styles.socialButton}>

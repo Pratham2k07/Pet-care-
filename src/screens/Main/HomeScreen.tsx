@@ -9,27 +9,22 @@ import {
   SafeAreaView,
   Dimensions
 } from 'react-native';
+import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useAuth } from '../../store/useAuth';
-import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { usePetStore } from '../../store/usePetStore';
 
 const { width } = Dimensions.get('window');
 
 export default function HomeScreen({ navigation }: any) {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
+  const { pets, dailyLogs, ownerName } = usePetStore();
   
-  // Local state for checkboxes
-  const [tasks, setTasks] = useState([
-    { id: 1, title: 'Morning Walk (30 mins)', completed: false },
-    { id: 2, title: 'Feed Breakfast', completed: true },
-    { id: 3, title: 'Give Heartworm Meds', completed: false },
-  ]);
+  const displayName = ownerName || user?.user_metadata?.full_name || 'User';
+  const initial = displayName.charAt(0).toUpperCase();
 
-  const toggleTask = (id: number) => {
-    setTasks(tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
-  };
-
-  const { pets } = usePetStore();
+  // For the demo, we just use the first pet's latest log
+  const activePet = pets[0];
+  const latestLog = activePet ? dailyLogs.find(log => log.petId === activePet.id) : undefined;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FAFAFA' }}>
@@ -41,18 +36,17 @@ export default function HomeScreen({ navigation }: any) {
         <View style={styles.header}>
           <View>
             <Text style={styles.greeting}>Good Morning,</Text>
-            <Text style={styles.username}>Alex! 👋</Text>
+            <Text style={styles.username}>{displayName}! 👋</Text>
           </View>
           <View style={styles.headerRight}>
             <TouchableOpacity style={styles.iconButton}>
               <Ionicons name="notifications-outline" size={24} color="#1E293B" />
               <View style={styles.notificationBadge} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={signOut}>
-              <Image 
-                source={{uri: 'https://i.pravatar.cc/150?img=68'}} 
-                style={styles.profilePic} 
-              />
+            <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+              <View style={[styles.profilePic, { backgroundColor: '#FF8BA7', alignItems: 'center', justifyContent: 'center' }]}>
+                <Text style={{ color: '#FFF', fontSize: 20, fontWeight: 'bold' }}>{initial}</Text>
+              </View>
             </TouchableOpacity>
           </View>
         </View>
@@ -123,24 +117,21 @@ export default function HomeScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
 
-        {/* Daily Routine */}
-        <Text style={styles.sectionTitle}>Daily Routine</Text>
-        <View style={styles.routineCard}>
-          {tasks.map((task, index) => (
-            <TouchableOpacity 
-              key={task.id} 
-              style={[styles.routineItem, index !== tasks.length - 1 && styles.routineBorder]}
-              onPress={() => toggleTask(task.id)}
-            >
-              <View style={[styles.checkbox, task.completed && styles.checkboxChecked]}>
-                {task.completed && <Ionicons name="checkmark" size={16} color="#FFF" />}
-              </View>
-              <Text style={[styles.routineText, task.completed && styles.routineTextCompleted]}>
-                {task.title}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        {/* Quick Actions */}
+        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <TouchableOpacity 
+          style={styles.dailyLogBtn}
+          onPress={() => activePet && navigation.navigate('DailyLog', { pet: activePet })}
+        >
+          <View style={styles.dailyLogBtnContent}>
+            <Ionicons name="clipboard" size={24} color="#FFF" style={{marginRight: 12}} />
+            <View>
+              <Text style={styles.dailyLogBtnTitle}>Log Daily Health</Text>
+              <Text style={styles.dailyLogBtnDesc}>Track today's feeding & behavior</Text>
+            </View>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#FFF" />
+        </TouchableOpacity>
 
         {/* Discover & Tips */}
         <View style={styles.sectionHeader}>
@@ -373,48 +364,34 @@ const styles = StyleSheet.create({
     marginLeft: 4,
     fontWeight: '500',
   },
-  routineCard: {
-    backgroundColor: '#FFFFFF',
+  dailyLogBtn: {
+    backgroundColor: '#38BDF8',
     marginHorizontal: 24,
-    borderRadius: 24,
-    paddingHorizontal: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  routineItem: {
+    borderRadius: 20,
+    padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
+    justifyContent: 'space-between',
+    shadowColor: '#38BDF8',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  routineBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: '#CBD5E1',
-    marginRight: 12,
+  dailyLogBtnContent: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  checkboxChecked: {
-    backgroundColor: '#FF8BA7',
-    borderColor: '#FF8BA7',
+  dailyLogBtnTitle: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '800',
+    marginBottom: 2,
   },
-  routineText: {
-    fontSize: 15,
-    color: '#1E293B',
+  dailyLogBtnDesc: {
+    color: '#E0F2FE',
+    fontSize: 13,
     fontWeight: '500',
-  },
-  routineTextCompleted: {
-    color: '#94A3B8',
-    textDecorationLine: 'line-through',
   },
   tipsContainer: {
     flexDirection: 'row',

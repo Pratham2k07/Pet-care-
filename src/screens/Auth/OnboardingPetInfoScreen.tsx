@@ -14,12 +14,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { usePetStore } from '../../store/usePetStore';
 
 export default function OnboardingPetInfoScreen({ navigation }: any) {
+  const [ownerName, setOwnerNameLocal] = useState('');
   const [petType, setPetType] = useState('Dog');
   const [name, setName] = useState('');
   const [breed, setBreed] = useState('');
   const [showBreedDropdown, setShowBreedDropdown] = useState(false);
   const [age, setAge] = useState('');
   const [weight, setWeight] = useState('');
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const DOG_BREEDS = ['Golden Retriever', 'Labrador', 'Shih Tzu', 'Pug', 'German Shepherd', 'Bulldog', 'Poodle', 'Beagle', 'Rottweiler', 'Yorkshire Terrier', 'Boxer', 'Dachshund', 'Siberian Husky', 'Great Dane', 'Doberman', 'Chihuahua', 'Mixed Breed'];
   const CAT_BREEDS = ['Persian', 'Maine Coon', 'Siamese', 'Ragdoll', 'Bengal', 'Abyssinian', 'Birman', 'Oriental Shorthair', 'Sphynx', 'Devon Rex', 'Himalayan', 'American Shorthair', 'British Shorthair', 'Scottish Fold', 'Mixed Breed'];
@@ -27,22 +29,35 @@ export default function OnboardingPetInfoScreen({ navigation }: any) {
   const currentBreeds = petType === 'Dog' ? DOG_BREEDS : CAT_BREEDS;
   const filteredBreeds = currentBreeds.filter(b => b.toLowerCase().includes(breed.toLowerCase()));
 
-  const { addPet } = usePetStore();
+  const { addPet, setOwnerName } = usePetStore();
 
   const handleNext = () => {
+    const newErrors: { [key: string]: string } = {};
+    if (!ownerName.trim()) newErrors.ownerName = 'Your name is required';
+    if (!name.trim()) newErrors.name = 'Pet name is required';
+    if (!age.trim()) newErrors.age = 'Age is required';
+    if (!weight.trim()) newErrors.weight = 'Weight is required';
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setErrors({});
     const newId = Date.now().toString();
     // Default mock images based on type if no photo is uploaded
     const mockImage = petType === 'Dog' 
-      ? require('../../../assets/theme5.png') 
-      : require('../../../assets/theme2.png');
+      ? require('../../../assets/theme1.jpeg') 
+      : require('../../../assets/theme2.jpeg');
       
+    setOwnerName(ownerName.trim());
     addPet({
       id: newId,
-      name: name || 'My Pet',
+      name: name.trim(),
       type: petType,
-      breed: breed || 'Unknown Breed',
-      age: age ? `${age} yrs` : 'Unknown Age',
-      weight: weight ? `${weight} kg` : '',
+      breed: breed.trim() || 'Unknown Breed',
+      age: `${age.trim()} yrs`,
+      weight: `${weight.trim()} kg`,
       image: mockImage,
       bg: petType === 'Dog' ? '#FFF7E6' : '#FFF0E6'
     });
@@ -59,16 +74,32 @@ export default function OnboardingPetInfoScreen({ navigation }: any) {
         <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
           
           <View style={styles.header}>
-            <Text style={styles.title}>Tell us about your pet!</Text>
-            <Text style={styles.subtitle}>Let's set up their profile.</Text>
+            <TouchableOpacity onPress={() => {
+              import('../../services/supabase').then(s => s.supabase.auth.signOut());
+            }} style={styles.backBtn}>
+              <Ionicons name="arrow-back" size={24} color="#1E293B" />
+            </TouchableOpacity>
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.title}>Tell us about your pet!</Text>
+              <Text style={styles.subtitle}>Let's set up their profile.</Text>
+            </View>
+            <View style={{ width: 40 }} />
           </View>
 
-          {/* Photo Upload Placeholder */}
-          <View style={styles.photoContainer}>
-            <TouchableOpacity style={styles.photoUpload}>
-              <Ionicons name="camera" size={32} color="#FF8BA7" />
-              <Text style={styles.photoText}>Add Photo</Text>
-            </TouchableOpacity>
+          {/* Owner Info */}
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Your Name</Text>
+            <TextInput 
+              style={[styles.input, errors.ownerName && styles.inputError]} 
+              placeholder="e.g. Alex" 
+              placeholderTextColor="#9CA3AF"
+              value={ownerName}
+              onChangeText={(text) => {
+                setOwnerNameLocal(text);
+                setErrors({...errors, ownerName: ''});
+              }}
+            />
+            {errors.ownerName && <Text style={styles.errorText}>{errors.ownerName}</Text>}
           </View>
 
           {/* Pet Type Selector */}
@@ -97,12 +128,16 @@ export default function OnboardingPetInfoScreen({ navigation }: any) {
           <View style={styles.formGroup}>
             <Text style={styles.label}>Pet Name</Text>
             <TextInput 
-              style={styles.input} 
+              style={[styles.input, errors.name && styles.inputError]} 
               placeholder="e.g. Bella" 
               placeholderTextColor="#9CA3AF"
               value={name}
-              onChangeText={setName}
+              onChangeText={(text) => {
+                setName(text);
+                setErrors({...errors, name: ''});
+              }}
             />
+            {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
           </View>
 
           <View style={[styles.formGroup, { zIndex: 10 }]}>
@@ -150,24 +185,32 @@ export default function OnboardingPetInfoScreen({ navigation }: any) {
             <View style={[styles.formGroup, { flex: 1, marginRight: 8 }]}>
               <Text style={styles.label}>Age (Years)</Text>
               <TextInput 
-                style={styles.input} 
+                style={[styles.input, errors.age && styles.inputError]} 
                 placeholder="e.g. 2" 
                 placeholderTextColor="#9CA3AF"
                 keyboardType="numeric"
                 value={age}
-                onChangeText={setAge}
+                onChangeText={(text) => {
+                  setAge(text);
+                  setErrors({...errors, age: ''});
+                }}
               />
+              {errors.age && <Text style={styles.errorText}>{errors.age}</Text>}
             </View>
             <View style={[styles.formGroup, { flex: 1, marginLeft: 8 }]}>
               <Text style={styles.label}>Weight (kg)</Text>
               <TextInput 
-                style={styles.input} 
+                style={[styles.input, errors.weight && styles.inputError]} 
                 placeholder="e.g. 5" 
                 placeholderTextColor="#9CA3AF"
                 keyboardType="numeric"
                 value={weight}
-                onChangeText={setWeight}
+                onChangeText={(text) => {
+                  setWeight(text);
+                  setErrors({...errors, weight: ''});
+                }}
               />
+              {errors.weight && <Text style={styles.errorText}>{errors.weight}</Text>}
             </View>
           </View>
 
@@ -194,8 +237,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   header: {
-    marginTop: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
     marginBottom: 30,
+    justifyContent: 'space-between',
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTextContainer: {
     alignItems: 'center',
   },
   title: {
@@ -275,6 +331,16 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     fontSize: 16,
     color: '#1E293B',
+  },
+  inputError: {
+    borderColor: '#EF4444',
+    borderWidth: 1,
+  },
+  errorText: {
+    color: '#EF4444',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
   },
   row: {
     flexDirection: 'row',

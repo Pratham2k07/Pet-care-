@@ -8,7 +8,8 @@ import {
   KeyboardAvoidingView, 
   Platform, 
   ScrollView,
-  SafeAreaView
+  SafeAreaView,
+  Alert
 } from 'react-native';
 import { Ionicons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import { usePetStore } from '../../store/usePetStore';
@@ -23,30 +24,31 @@ const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
   return `${formattedHour}:${minute} ${ampm}`;
 });
 
-export default function OnboardingScheduleScreen({ route, navigation }: any) {
-  const [wakeTime, setWakeTime] = useState('');
+export default function ScheduleScreen({ navigation }: any) {
+  const { pets, updatePet } = usePetStore();
+  const activePet = pets[0]; // Assuming MVP has 1 pet
+
+  const [wakeTime, setWakeTime] = useState(activePet?.wakeTime || '');
   
   const [expandedMeal, setExpandedMeal] = useState<string | null>(null);
-  const [breakfast, setBreakfast] = useState({ time: '', type: '' });
-  const [lunch, setLunch] = useState({ time: '', type: '' });
-  const [dinner, setDinner] = useState({ time: '', type: '' });
+  const [breakfast, setBreakfast] = useState(activePet?.breakfast || { time: '', type: '' });
+  const [lunch, setLunch] = useState(activePet?.lunch || { time: '', type: '' });
+  const [dinner, setDinner] = useState(activePet?.dinner || { time: '', type: '' });
 
-  const [walkTimes, setWalkTimes] = useState<string[]>(['']);
+  const [walkTimes, setWalkTimes] = useState<string[]>(activePet?.walkTimes && activePet.walkTimes.length > 0 ? activePet.walkTimes : ['']);
 
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
 
   // Food Baseline State
-  const [foodType, setFoodType] = useState('Packaged Food');
-  const [foodDetails, setFoodDetails] = useState('');
-  const [avgQuantity, setAvgQuantity] = useState('');
-  const [waterIntake, setWaterIntake] = useState('');
-
-  const { petId } = route.params || {};
-  const { updatePet, completeOnboarding } = usePetStore();
+  const fb = activePet?.foodBaseline;
+  const [foodType, setFoodType] = useState(fb?.foodType || 'Packaged Food');
+  const [foodDetails, setFoodDetails] = useState(fb?.details || '');
+  const [avgQuantity, setAvgQuantity] = useState(fb?.avgQuantity || '');
+  const [waterIntake, setWaterIntake] = useState(fb?.waterIntake || '');
 
   const [errorMsg, setErrorMsg] = useState('');
 
-  const handleComplete = () => {
+  const handleSave = () => {
     const validWalks = walkTimes.filter(t => t.trim() !== '');
     
     if (!wakeTime.trim()) {
@@ -60,8 +62,8 @@ export default function OnboardingScheduleScreen({ route, navigation }: any) {
     
     setErrorMsg('');
 
-    if (petId) {
-      updatePet(petId, {
+    if (activePet) {
+      updatePet(activePet.id, {
         wakeTime,
         breakfast: breakfast.time ? breakfast : undefined,
         lunch: lunch.time ? lunch : undefined,
@@ -74,9 +76,8 @@ export default function OnboardingScheduleScreen({ route, navigation }: any) {
           waterIntake
         }
       });
+      Alert.alert('Success', 'Schedule updated successfully!');
     }
-    completeOnboarding();
-    // Dynamic AppNavigator will detect the pet is saved and automatically swap to MainApp
   };
 
   const addWalk = () => {
@@ -194,6 +195,8 @@ export default function OnboardingScheduleScreen({ route, navigation }: any) {
     );
   };
 
+  if (!activePet) return <View style={styles.container}><Text>No pet found.</Text></View>;
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
       <KeyboardAvoidingView 
@@ -203,14 +206,7 @@ export default function OnboardingScheduleScreen({ route, navigation }: any) {
         <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           
           <View style={styles.header}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-              <Ionicons name="arrow-back" size={24} color="#1E293B" />
-            </TouchableOpacity>
-            <View style={styles.headerTextContainer}>
-              <Text style={styles.title}>Daily Routine</Text>
-              <Text style={styles.subtitle}>When do they eat and play?</Text>
-            </View>
-            <View style={{ width: 40 }} />
+            <Text style={styles.title}>Edit Schedule</Text>
           </View>
 
           {/* Wake Up Time Dropdown */}
@@ -366,11 +362,10 @@ export default function OnboardingScheduleScreen({ route, navigation }: any) {
           ) : null}
 
           <TouchableOpacity 
-            style={[styles.nextBtn, { zIndex: 1 }]}
-            onPress={handleComplete}
+            style={[styles.saveBtn, { zIndex: 1 }]}
+            onPress={handleSave}
           >
-            <Text style={styles.nextBtnText}>Complete Setup</Text>
-            <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
+            <Text style={styles.saveBtnText}>Save Schedule</Text>
           </TouchableOpacity>
 
         </ScrollView>
@@ -386,32 +381,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   header: {
-    flexDirection: 'row',
+    marginBottom: 20,
     alignItems: 'center',
     marginTop: 10,
-    marginBottom: 30,
-    justifyContent: 'space-between',
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F8FAFC',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTextContainer: {
-    alignItems: 'center',
   },
   title: {
     fontSize: 22,
     fontWeight: '800',
     color: '#1E293B',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#64748B',
   },
   sectionTitle: {
     fontSize: 18,
@@ -544,24 +521,22 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
     fontStyle: 'italic',
   },
-  nextBtn: {
-    backgroundColor: '#FF8BA7',
-    flexDirection: 'row',
+  saveBtn: {
+    backgroundColor: '#38BDF8',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 18,
     borderRadius: 16,
-    shadowColor: '#FF8BA7',
+    shadowColor: '#38BDF8',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
   },
-  nextBtnText: {
+  saveBtnText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
-    marginRight: 8,
   },
   counterRow: {
     flexDirection: 'row',
