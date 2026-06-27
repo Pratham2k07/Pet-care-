@@ -17,6 +17,8 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import * as AuthSession from 'expo-auth-session';
+import { useAuth } from '../../store/useAuth';
+import { usePetStore } from '../../store/usePetStore';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -26,73 +28,51 @@ export default function LoginScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  const setSession = useAuth(state => state.setSession);
+  const { reset } = usePetStore();
+
   async function signInWithEmail() {
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      Alert.alert('Login Failed', error.message);
-    }
-    setLoading(false);
+    // Mock login for seamless presentation flow
+    setTimeout(() => {
+      reset(); // ensure fresh onboarding state
+      setSession({
+        access_token: 'demo-token',
+        refresh_token: 'demo-token',
+        expires_in: 3600,
+        token_type: 'bearer',
+        user: {
+          id: 'demo-user',
+          app_metadata: {},
+          user_metadata: { full_name: email.split('@')[0] || 'Demo User' },
+          aud: 'authenticated',
+          created_at: new Date().toISOString()
+        } as any
+      });
+      setLoading(false);
+    }, 600);
   }
 
   async function signInWithGoogle() {
-    try {
-      setLoading(true);
-
-      if (Platform.OS === 'web') {
-        const { data, error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: window.location.origin,
-          }
-        });
-        if (error) throw error;
-        if (data?.url) {
-          window.location.href = data.url;
-        }
-        return;
-      }
-      
-      const redirectUrl = AuthSession.makeRedirectUri();
-      
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl,
-        },
+    setLoading(true);
+    // Mock Google login for seamless presentation flow
+    setTimeout(() => {
+      reset(); // ensure fresh onboarding state
+      setSession({
+        access_token: 'demo-token',
+        refresh_token: 'demo-token',
+        expires_in: 3600,
+        token_type: 'bearer',
+        user: {
+          id: 'demo-user',
+          app_metadata: {},
+          user_metadata: { full_name: 'Google User' },
+          aud: 'authenticated',
+          created_at: new Date().toISOString()
+        } as any
       });
-
-      if (error) throw error;
-
-      if (data?.url) {
-        const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
-        if (result.type === 'success' && result.url) {
-          const paramsStr = result.url.split('#')[1] || result.url.split('?')[1];
-          if (paramsStr) {
-            const params = paramsStr.split('&').reduce((acc, current) => {
-              const [key, value] = current.split('=');
-              acc[key] = value;
-              return acc;
-            }, {} as Record<string, string>);
-            
-            if (params.access_token && params.refresh_token) {
-              await supabase.auth.setSession({
-                access_token: params.access_token,
-                refresh_token: params.refresh_token
-              });
-            }
-          }
-        }
-      }
-    } catch (error: any) {
-      Alert.alert('Google Sign-In Error', error.message);
-    } finally {
       setLoading(false);
-    }
+    }, 800);
   }
 
   return (
@@ -208,7 +188,7 @@ export default function LoginScreen({ navigation }: any) {
               <Text style={styles.socialText}>or continue with</Text>
               <View style={styles.dividerLine} />
             </View>
-            
+
             <View style={styles.socialButtonsContainer}>
               <TouchableOpacity style={styles.socialButton} onPress={signInWithGoogle} disabled={loading}>
                 <Image source={{uri: 'https://cdn-icons-png.flaticon.com/512/2991/2991148.png'}} style={styles.socialIcon} />

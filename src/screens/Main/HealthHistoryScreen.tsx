@@ -38,7 +38,38 @@ export default function HealthHistoryScreen({ route, navigation }: any) {
             confidence: 85,
             trend: "Worsening",
             primaryConcern: "Reduced activity and abnormal kidney markers detected in recent blood work.",
-            vetUrgency: "Monitor Closely"
+            riskCategories: [
+              {
+                category: "Kidney Health",
+                riskLevel: "High",
+                reason: "Creatinine levels slightly above normal range.",
+                recommendedAction: "Schedule a vet consultation within 3-5 days."
+              },
+              {
+                category: "Weight & Obesity",
+                riskLevel: "Moderate",
+                reason: "Mild weight gain over the last 3 months.",
+                recommendedAction: "Adjust portion sizes slightly."
+              },
+              {
+                category: "Hydration",
+                riskLevel: "Low",
+                reason: "Water intake appears consistent and normal.",
+                recommendedAction: "Maintain current access to fresh water."
+              }
+            ],
+            explainableFactors: [
+              "Creatinine level at 1.9 mg/dL (Normal is 0.5-1.5)",
+              "30% reduction in daily activity based on logs",
+              "Recent weight gain of 1.2 lbs over 14 days"
+            ],
+            vetUrgency: "Monitor Closely",
+            suggestedActions: [
+              "Increase water access",
+              "Monitor urination frequency",
+              "Book a vet consultation",
+              "Increase daily walk by 10 mins"
+            ]
           })
         }
       ]);
